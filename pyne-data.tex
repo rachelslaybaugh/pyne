@@ -1,0 +1,162 @@
+\documentclass{proposalnsf}
+%\documentclass[12pt,twoside]{article}
+%\usepackage[letterpaper, textwidth=6.5in, textheight=9in]{geometry}
+
+% no indents
+\setlength\parindent{0pt}
+% extra line between paragraphs
+\setlength{\parskip}{1 em}
+
+\usepackage{amsmath}
+\usepackage{amssymb,amsthm,graphicx}
+\usepackage{epsfig}
+\usepackage[mathcal]{euscript}
+\usepackage{setspace}
+\usepackage{color}
+\usepackage{array}
+\usepackage{times}
+\renewcommand{\ttdefault}{cmtt}
+% The float package HAS to load before hyperref
+\usepackage{float} % for psuedocode formatting
+\usepackage{xspace}
+\usepackage{mathrsfs}
+\usepackage[pdftex]{hyperref}
+
+\newcommand{\ve}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\vOmega}{\ensuremath{\hat{\Omega}}}
+
+%\date{\today}
+%\title{PyNE Data API Summary}
+%\author{Rachel Slaybaugh}
+\begin{document}
+%-----------------------------------------------
+\begin{center}
+\textbf{PyNE Data API Summary}
+\end{center}
+
+\section{ENSDF}
+\textbf{ENSDF File Support: pyne.ensdf}\label{ensdf}\\
+Pyne should nominally contain support for reading and writing Evaluated Nuclear Structure Data Files (ENSDF). Currently it can parse most of the level and decay datasets. This data can be accessed via the pyne.data module.
+
+Related: Decay module \ref{decay}
+
+\underline{pyne.ensdf.decays(filename, decaylist=None)}\\
+This splits an ENSDF file into datasets. It then passes the dataset to the appropriate parser. Currently only a subset of decay datasets are supported. The output is a list of objects containing information pertaining to a particular decay.
+
+\underline{pyne.ensdf.levels(filename, levellist=None)}\\
+This takes an ENSDF filename or file object and parses the ADOPTED LEVELS records to assign level numbers by energy. It also parses the different reported decay types and branching ratios.
+
+\section{Basics}
+\textbf{Basic Nuclear Data: pyne.data}\\
+This module provides a top-level interface for a variety of basic nuclear data needs. This aims to provide quick access to very high fidelity data. Usually values are taken from the nuc\_data.h5 library.
+
+\textbf{Cross Section Interface: pyne.xs}\\
+Pyne provides a top-level interface for computing (and caching) multigroup neutron cross sections. These cross sections will be computed from a variety of available data sources (stored in nuc\_data.h5). In order of preference:
+
+\begin{enumerate}
+\item CINDER 63-group cross sections,
+\item A two-point fast/thermal interpolation (using ‘simple\_xs’ data from KAERI),
+\item or physical models.
+\end{enumerate}
+
+In the future, this package should support generating multigroup cross sections from user-specified pointwise data sources (such as ENDF or ACE files).
+
+\textit{Cross Section Modules}
+\begin{compactitem}
+\item Cross Section Models: pyne.xs.models
+\item Cross Section Data Sources: pyne.xs.data\_source
+\item Cross Section Cache: pyne.xs.cache
+\item Nuclear Reaction Channels: pyne.xs.channels
+\end{compactitem}
+
+%---------------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\section{Physics Codes}
+\textbf{NJOY Automation: pyne.njoy}\\
+Automatic generation of Njoy input data, including dragr data. Generation of DRAGLIB and ACELIB. Please see the tutorial at http://www.polymtl.ca/merlin/downloads/IGE305.pdf for more information.
+
+%---------------------------------------------------------------------------
+%---------------------------------------------------------------------------
+\section{Data Formats}
+
+\textbf{ACE Cross Sections: pyne.ace}\\
+This module is for reading ACE-format cross sections. ACE stands for ``A Compact ENDF" format and originated from work on MCNP. It is used in a number of other Monte Carlo particle transport codes.
+
+ACE-format cross sections are typically generated from ENDF files through a cross section processing program like NJOY. The ENDF data consists of tabulated thermal data, ENDF/B resonance parameters, distribution parameters in the unresolved resonance region, and tabulated data in the fast region. After the ENDF data has been reconstructed and Doppler-broadened, the ACER module generates ACE-format cross sections.
+
+\textbf{ENDF File Support: pyne.endf}\\
+Module for parsing and manipulating data from ENDF evaluations. Currently, it only can read several MTs from File 1, but with time it will be expanded to include the entire ENDF format.
+
+\textbf{ENSDF File Support: pyne.ensdf}\\
+See ENSDF \ref{ensdf} for more information.
+
+\textbf{CCCC Formats: pyne.cccc}\\
+The CCCC module contains a number of classes for reading various cross section, flux, geometry, and data files with specifications given by the Committee for Computer Code Coordination. The following types of files can be read using classes from this module: ISOTXS, DLAYXS, BRKOXS, RTFLUX, ATFLUX, RZFLUX, MATXS, and SPECTR.
+
+\textbf{Reaction Data: pyne.rxdata}\\
+Insufficiently documented; contains 
+\begin{compactitem}
+\item pyne.rxdata.DoubleSpinDict(spin\_dict)\\
+Sanitizes input, avoiding errors arising from half-integer values of spin.
+\item class pyne.rxdata.RxLib(data)\\
+RxLib is a parent type that implements an abstract representation of nuclear data. Eventually it will be able to represent ENDF, ACE, and other filetypes.
+\end{compactitem}
+
+\subsection{Nuclear Data Generation: pyne.dbgen}
+Pyne provides an easy-to-use, repeatable aggregation utility for nuclear data. This command line utility is called nuc\_data\_make builds and installs an HDF5 file named nuc\_data.h5 to the current PyNE install. Nuclear data is gathered from a vareity of sources, including the web and the data files for other programs installed on your system (such as MCNP).
+
+All of the code to produce the nuc\_data.h5 file is found in the dbgen sub-package. This package was designed to be modular. Therfore nuc\_data\_make may be run such that only an available subset of nuc\_data.h5 is produced.
+
+As this is the library refence portion of the documention, the underlying functionality for each module is displayed rather than how to use the end product. However, most modules here are divided conceptually into three parts, run in series:
+
+\begin{enumerate}
+\item Gather raw data and place it in a build directory.
+\item Parse the raw data and put it in a form suitable for storage in nuc\_data.h5.
+\item Write the parsed data to nuc\_data.h5.
+\end{enumerate}
+
+\textbf{Nuclear Data Utility: pyne.dbgen.nuc\_data\_make}\\
+This module provides a common interface for all nuclear data modules.
+
+\textbf{KAERI Helpers: pyne.dbgen.kaeri}\\
+This module provides tools for scraping nuclear data off of the KAERI website (http://atom.kaeri.re.kr). These functions are used by other parts of dbgen. Please use with respect.
+
+\textbf{Atomic Mass: pyne.dbgen.atomic\_mass}\\
+This module provides a way to grab and store raw data for atomic mass.
+
+\textbf{Radioactive Decay Data: pyne.dbgen.decay}\label{decay} \\
+This module adds radioactive decay data via ENSDF to nuc\_data.h5.
+This module provides a way to grab and store raw data for radioactive decay.
+
+\textbf{Neutron Scattering Lengths: pyne.dbgen.scattering\_lengths}\\
+This module provides a way to grab and store raw data for neutron scattering lengths. This data comes from Neutron News, Vol. 3, No. 3, 1992, pp. 29-37 via a NIST webpage (http://www.ncnr.nist.gov/resources/n-lengths/list.html). Please contact Alan Munter, $<$alan.munter@nist.gov$>$ for more information.
+
+\textbf{Simple Cross Sections: pyne.dbgen.simple\_xs}\\
+This module adds simple cross section data from KAERI to nuc\_data.h5.
+
+\textbf{CINDER Data: pyne.dbgen.cinder}\\
+This module locates, parses, and adds CINDER cross section and fission product yield data to nuc\_data.h5. Note that this module requires that the cinder.dat file exist within the DATAPATH directory. This often requires that MCNPX is installed.
+
+\textbf{EAF: pyne.dbgen.eaf}\\
+Module handles parsing EAF formatted cross section files and adding the data to PyNE’s HDF5 storage. The data here is autonatically grabbed from the IAEA.
+
+\textbf{Materials Library: pyne.dbgen.materials\_library}\\
+Module handles the construction of a reference materials library in nuc\_data.h5. This currently consists to natural element materials and those coming from PNNL’s Materials Compendium.
+
+\textbf{WIMSD Fission Product Yields: pyne.dbgen.wimsdfpy}\\
+This module provides a way to grab and store raw data for fission product yeilds from the WIMSD library at the IAEA. For more information, please visit their website: https://www-nds.iaea.org/wimsd/index.html or https://www-nds.iaea.org/wimsd/fpyield.htm.
+
+%%---------------------------------------------------------------------------%%
+%% BIBLIOGRAPHY
+%%---------------------------------------------------------------------------%%
+
+%\newpage
+%
+%\singlespacing
+%
+%\bibliographystyle{physor}
+%%\bibliographystyle{rnote}
+%\bibliography{references}
+
+
+\end{document}
