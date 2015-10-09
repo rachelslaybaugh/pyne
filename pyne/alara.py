@@ -4,12 +4,12 @@ from __future__ import print_function
 import os
 import collections
 from warnings import warn
-from pyne.utils import VnVWarning
+from pyne.utils import QAWarning
 
 import numpy as np
 import tables as tb
 
-warn(__name__ + " is not yet V&V compliant.", VnVWarning)
+warn(__name__ + " is not yet QA compliant.", QAWarning)
 
 try:
     basestring
@@ -21,7 +21,7 @@ try:
 except ImportError:
     warn("the PyTAPS optional dependency could not be imported. "
                   "Some aspects of the alara module may be incomplete.",
-                  VnVWarning)
+                  QAWarning)
 
 from pyne.mesh import Mesh, MeshError
 from pyne.material import Material, from_atom_frac
@@ -243,7 +243,7 @@ def record_to_geom(mesh, cell_fracs, cell_mats, geom_file, matlib_file,
 
      cell_mats : dict
         Maps geometry cell numbers to PyNE Material objects. Each PyNE material
-        object must have the 'mat_number' in Material.metadata.
+        object must have 'name' specified in Material.metadata.
     geom_file : str
         The name of the file to print the geometry and material blocks.
     matlib_file : str
@@ -255,63 +255,76 @@ def record_to_geom(mesh, cell_fracs, cell_mats, geom_file, matlib_file,
     # Create geometry information header. Note that the shape of the geometry
     # (rectangular) is actually inconsequential to the ALARA calculation so
     # unstructured meshes are not adversely affected. 
-    geometry = "geometry rectangular\n\n"
+    geometry = 'geometry rectangular\n\n'
 
     # Create three strings in order to create all ALARA input blocks in a
     # single mesh iteration.
-    volume = "volume\n" # volume input block
-    mat_loading = "mat_loading\n" # material loading input block
-    mixture = "" # mixture blocks
+    volume = 'volume\n' # volume input block
+    mat_loading = 'mat_loading\n' # material loading input block
+    mixture = '' # mixture blocks
 
     unique_mixtures = []
     for i, mat, ve in mesh:
-        volume += "    {0: 1.6E}    zone_{1}\n".format(mesh.elem_volume(ve), i)
+        volume += '    {0: 1.6E}    zone_{1}\n'.format(mesh.elem_volume(ve), i)
 
         ve_mixture = {}
         for row in cell_fracs[cell_fracs['idx'] == i]:
-            if cell_mats[row['cell']].metadata['mat_number'] \
-                not in ve_mixture.keys():
-                ve_mixture[cell_mats[row['cell']].metadata['mat_number']] = \
-                    round(row['vol_frac'], sig_figs)
+            cell_mat = cell_mats[row['cell']]
+            name = cell_mat.metadata['name']
+            if _is_void(name):
+                name = 'mat_void'
+            if name not in ve_mixture.keys():
+                ve_mixture[name] = np.round(row['vol_frac'], sig_figs)
             else:
-                ve_mixture[cell_mats[row['cell']].metadata['mat_number']] += \
-                    round(row['vol_frac'], sig_figs)
+                ve_mixture[name] += np.round(row['vol_frac'], sig_figs)
 
         if ve_mixture not in unique_mixtures:
             unique_mixtures.append(ve_mixture)
-            mixture += "mixture mix_{0}\n".format(
+            mixture += 'mixture mix_{0}\n'.format(
                                            unique_mixtures.index(ve_mixture))
             for key, value in ve_mixture.items():
-                mixture += "    material mat_{0} 1 {1}\n".format(key, value)
+                mixture += '    material {0} 1 {1}\n'.format(key, value)
 
-            mixture += "end\n\n"
+            mixture += 'end\n\n'
 
-        mat_loading += "    zone_{0}    mix_{1}\n".format(i, 
+        mat_loading += '    zone_{0}    mix_{1}\n'.format(i, 
                         unique_mixtures.index(ve_mixture))
 
-    volume += "end\n\n"
-    mat_loading += "end\n\n"
+    volume += 'end\n\n'
+    mat_loading += 'end\n\n'
 
     with open(geom_file, 'w') as f:
         f.write(geometry + volume + mat_loading + mixture)
     
-    matlib = "" # ALARA material library string
+    matlib = '' # ALARA material library string
 
     printed_mats = []
+    print_void = False
     for mat in cell_mats.values():
-        mat_num = mat.metadata['mat_number']
-        if mat_num not in printed_mats:
-            printed_mats.append(mat_num)
-            matlib += "mat_{0}    {1: 1.6E}    {2}\n".format(
-                       mat.metadata['mat_number'], mat.density, len(mat.comp))
+        name = mat.metadata['name']
+        if _is_void(name):
+            print_void = True
+            continue
+        if name not in printed_mats:
+            printed_mats.append(name)
+            matlib += '{0}    {1: 1.6E}    {2}\n'.format(name, mat.density,
+                                                         len(mat.comp))
             for nuc, comp in mat.comp.iteritems():
-                matlib += "{0}    {1: 1.6E}    {2}\n".format(alara(nuc), 
+                matlib += '{0}    {1: 1.6E}    {2}\n'.format(alara(nuc), 
                                                       comp*100.0, znum(nuc))
-            matlib += "\n"
+            matlib += '\n'
+
+    if print_void:
+       matlib += '# void material\nmat_void 0.0 1\nhe 1 2\n'
 
     with open(matlib_file, 'w') as f:
         f.write(matlib)
 
+def _is_void(name):
+    """Private function for determining if a material name specifies void.
+    """
+    lname = name.lower()
+    return 'vacuum' in lname or 'void' in lname or 'graveyard' in lname
 
 def mesh_to_geom(mesh, geom_file, matlib_file):
     """This function reads the materials of a PyNE mesh object and prints the
@@ -524,26 +537,23 @@ def irradiation_blocks(material_lib, element_lib, data_library, cooling,
 def _build_matrix(N):
     """ This function  builds burnup matrix, A. Decay only.
     """
-    
+
     A = np.zeros((len(N), len(N)))
-    
+
     # convert N to id form
     N_id = []
     for i in xrange(len(N)):
         ID = nucname.id(N[i])
         N_id.append(ID)
-        
     sds = SimpleDataSource()
 
     # Decay
     for i in xrange(len(N)):
         A[i, i] -= decay_const(N_id[i])
-        
         # Find decay parents
         for k in xrange(len(N)):
             if N_id[i] in decay_children(N_id[k]):
                 A[k, i] += decay_const(N_id[k])
-            
     return A
 
 def _rat_apprx_14(A, t, n_0):
@@ -558,7 +568,6 @@ def _rat_apprx_14(A, t, n_0):
     n_0: numpy array
 	Inital composition vector
     """
-	
     theta = np.array([ -8.8977731864688888199 + 16.630982619902085304j,
                    -3.7032750494234480603 + 13.656371871483268171j,
                    -.2087586382501301251 + 10.991260561901260913j,
@@ -566,7 +575,6 @@ def _rat_apprx_14(A, t, n_0):
                    5.0893450605806245066 + 3.5888240290270065102j,
                    5.6231425727459771248 + 1.1940690463439669766j,
                    2.2697838292311127097 + 8.4617379730402214019j])
-    
     alpha = np.array([-.000071542880635890672853 + .00014361043349541300111j,
                    .0094390253107361688779 - .01784791958483017511j,
                    -.37636003878226968717 + .33518347029450104214j,
@@ -574,7 +582,6 @@ def _rat_apprx_14(A, t, n_0):
                    46.933274488831293047 + 45.643649768827760791j,
                    -27.875161940145646468 - 102.14733999056451434j,
                    4.8071120988325088907 - 1.3209793837428723881j])
-    
     alpha_0 = np.array([1.8321743782540412751e-14])
 
     s = 7
@@ -586,7 +593,6 @@ def _rat_apprx_14(A, t, n_0):
 
     n = 2*n.real
     n = n + alpha_0*n_0
-    
     return n
 
 def _rat_apprx_16(A, t, n_0):
@@ -609,7 +615,6 @@ def _rat_apprx_16(A, t, n_0):
                    1.4193758971856659786 + 10.925363484496722585j,
                    4.9931747377179963991 + 5.9968817136039422260j,
                    -1.4139284624888862114 + 13.497725698892745389j])
-    
     alpha = np.array([ -.0000005090152186522491565 - .00002422001765285228797j,
                       .00021151742182466030907 + .0043892969647380673918j,
                       113.39775178483930527 + 101.9472170421585645j,
@@ -618,9 +623,7 @@ def _rat_apprx_16(A, t, n_0):
                       -1.4793007113557999718 + 1.7686588323782937906j,
                       -62.518392463207918892 - 11.19039109428322848j,
                       .041023136835410021273 - .15743466173455468191j])
-    
     alpha_0 = np.array([2.1248537104952237488e-16])
-    
 
     s = 8
     A = A*t
@@ -650,14 +653,14 @@ def cram(N, t, n_0, order):
 
     n_0 = np.array(n_0)
     A = build_matrix(N)
-    
+
     if order == 14:
         return rat_apprx_14(A, t, n_0)
-    
+
     elif order == 16:
         return rat_apprx_16(A, t, n_0)
-    
+
     else:
         msg = 'Rational approximation of degree {0} is not supported.'.format(order)
         raise ValueError(msg)
-    
+

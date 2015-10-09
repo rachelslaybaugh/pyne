@@ -13,6 +13,7 @@ The following modules and sub-packages are discussed:
 
     nucname
     rxname
+    particle
     data
     material
     mesh
@@ -25,6 +26,7 @@ The following modules and sub-packages are discussed:
 
     transmute/index
     enrichment
+    spatialsolver
     r2s
     bins
     variancereduction
@@ -35,10 +37,12 @@ The following modules and sub-packages are discussed:
     :maxdepth: 1
 
     mcnp
+    fluka
     serpent
     njoy
     alara
     origen22
+    partisn
 
 **Data Formats:**
 

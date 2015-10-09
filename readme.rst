@@ -9,7 +9,7 @@ and contribute, please let us know either on the mailing list
 pyne-dev@googlegroups.com) or `github`_.
 
 Examples, documentation, and more can be found at 
-http://pyne.io/, the official PyNE projectsite.
+http://pyne.io/, the official PyNE project site.
 
 .. _github: https://github.com/pyne/pyne
 
@@ -26,6 +26,8 @@ Dependencies
 ------------
 PyNE has the following dependencies:
 
+   #. `Fortran compiler <https://gcc.gnu.org/wiki/GFortran>`_
+   #. `C++ compiler <https://gcc.gnu.org/>`_
    #. `CMake <http://www.cmake.org/>`_ (>= 2.8.5)
    #. `NumPy <http://www.numpy.org/>`_ (>= 1.8.0)
    #. `SciPy <http://www.scipy.org/>`_
@@ -33,13 +35,22 @@ PyNE has the following dependencies:
    #. `HDF5 <http://www.hdfgroup.org/HDF5/>`_
    #. `PyTables <http://www.pytables.org/>`_
    #. `Python 2.7 <http://www.python.org/>`_
+   #. `LAPACK <http://www.netlib.org/lapack/>`_
+   #. `BLAS <http://www.netlib.org/blas/>`_
+   #. `Jinja2 <http://jinja.pocoo.org/>`_
+
+Optional Depenendencies:
+   #. `MOAB <http://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB>`_
+   #. `PyTAPS <https://pythonhosted.org/PyTAPS/index.html>`_
 
 Additionally, building the documentation requires the following:
 
    #. `Sphinx <http://sphinx-doc.org/>`_
-   #. `SciSphinx <https://github.com/numfocus/scisphinx>`_
-   #. `breathe <http://michaeljones.github.io/breathe/>`_ 
+   #. `sphinxcontrib-bibtex <https://pypi.python.org/pypi/sphinxcontrib-bibtex/>`_
    #. `PrettyTable <https://code.google.com/p/prettytable/>`_
+   #. `numpydoc <https://pypi.python.org/pypi/numpydoc>`_
+
+Most of the dependencies are readily available through package managers. 
 
 ------
 Binary
@@ -73,7 +84,7 @@ data is under some form of license restriction or export control which
 prevents the developers from distributing it with PyNE.  However, the 
 ``nuc_data_make`` program (which is installed by ``setup.py``) will
 do its best to find relevant nuclear data elsewhere on your machine
-or from public sources on the internet.  
+or from public sources on the internet.
 
 ^^^^^^^^^^^^^^^^^^^
 Supported Platforms
@@ -98,6 +109,17 @@ PyNE has known issues on the following platforms
 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Conda Install Instructions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+After installing anaconda or miniconda from 
+`the Continuum downloads page <http://continuum.io/downloads>`_,
+in a new terminal run the following conda install command::
+
+    conda install -c https://conda.binstar.org/pyne pyne
+
+If you have any issues, please let us know.
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Conda Build Instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 On mac and linux PyNE can be installed via the package manager conda. 
 After installing anaconda or miniconda from 
@@ -126,9 +148,19 @@ cd to the conda-recipes directory and run::
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Mac OSX Specific Instructions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-These instructions are based on using the homebrew http://brew.sh/ package manager
-Install command line tools from https://developer.apple.com/downloads/
-you will need to create an account in order to download::
+The simplest method of installing PyNE on mac is via macports. Version 0.4 
+can be installed using the following commands(assuming you are using python 2.7)::
+
+   sudo port install py27-pyne
+   nuc_data_make --fetch-prebuilt False
+
+The latest development version of PyNE can also be installed from source. The 
+instructions below outline how it can be installed
+using the homebrew http://brew.sh/ package manager.
+
+Before starting install the command line tools from https://developer.apple.com/downloads/
+you will need to create an account in order to download them. After installing brew and
+the command line tools run the following commands::
 
     ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go/install)"
     brew doctor
@@ -168,8 +200,16 @@ Once those lines have been added, run the following command before running
 .. _zip: https://github.com/pyne/pyne/zipball/0.4
 .. _tar: https://github.com/pyne/pyne/tarball/0.4
 
-.. install-end
 
+^^^^^^^^^^^^^^^^^^^^^^^^^
+Ubuntu 14.04 Build script
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A script for installing PyNE and all its dependencies from scratch on Ubuntu
+14.04 is found `here
+<https://github.com/pyne/install_scripts/blob/master/ubuntu_14.04.sh>`_
+
+.. install-end
 
 ============
 Contributing

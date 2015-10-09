@@ -8,7 +8,7 @@ module.
 import sys
 from bisect import bisect_right
 from warnings import warn
-from pyne.utils import VnVWarning
+from pyne.utils import QAWarning
 
 import numpy as np
 import matplotlib
@@ -23,7 +23,7 @@ from PyQt4.QtGui import *
 
 from pyne import ace
 
-warn(__name__ + " is not yet V&V compliant.", VnVWarning)
+warn(__name__ + " is not yet QA compliant.", QAWarning)
 
 matplotlib.use('Qt4Agg')
 
@@ -207,7 +207,7 @@ class AceViewer(QMainWindow):
                 table = reaction.table
                 
                 # Plot reaction cross section
-                self.axes.loglog(table.energy[reaction.IE-1:], reaction.sigma)
+                self.axes.loglog(table.energy[reaction.IE:], reaction.sigma)
             
             # Customize plot
             self.axes.grid(True)

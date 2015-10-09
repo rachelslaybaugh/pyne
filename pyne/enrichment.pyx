@@ -16,7 +16,7 @@ from libc.stdlib cimport free
 from libcpp.string cimport string as std_string
 
 from warnings import warn
-from pyne.utils import VnVWarning
+from pyne.utils import QAWarning
 
 from pyne cimport nucname
 from pyne import nucname
@@ -27,7 +27,7 @@ import pyne.material
 from pyne cimport cpp_enrichment
 
 
-warn(__name__ + " is not yet V&V compliant.", VnVWarning)
+warn(__name__ + " is not yet QA compliant.", QAWarning)
 
 
 #####################
@@ -281,7 +281,143 @@ def default_uranium_cascade():
     duc._inst[0] = cpp_duc
     return duc
 
+def feed(double x_feed, double x_prod, double x_tail, double product=0, 
+         double tails=0):
+    """feed(x_feed, x_prod, x_tail, product=0, tails=0)
+    Calculates the feed quantity in kg from either the product or tails.
 
+    Parameters
+    ----------
+    x_feed : float
+        Feed enrichment.
+    x_prod : float
+        Product enrichment.
+    x_tail : float
+        Feed enrichment.
+    product : float, optional
+        Quantity of product in kg
+    tails : float, optional
+        Quantity of tails in kg
+
+    Returns
+    -------
+    feed : float
+        Feed quantity
+    """
+    if product > 0:
+        return product * cpp_enrichment.feed_per_prod(x_feed, x_prod, x_tail)
+    else:
+        return tails * cpp_enrichment.feed_per_tail(x_feed, x_prod, x_tail)
+    
+def product(double x_feed, double x_prod, double x_tail, double feed=0, 
+            double tails=0):
+    """product(x_feed, x_prod, x_tail, feed=0, tails=0)
+    Calculates the product quantity in kg from either the feed or tails.
+
+    Parameters
+    ----------
+    x_feed : float
+        Feed enrichment.
+    x_prod : float
+        Product enrichment.
+    x_tail : float
+        Product enrichment.
+    feed : float, optional
+        Quantity of feed in kg
+    tails : float, optional
+        Quantity of tails in kg
+
+    Returns
+    -------
+    product : float
+        Product quantity
+    """
+    if feed > 0:
+        return feed * cpp_enrichment.prod_per_feed(x_feed, x_prod, x_tail)
+    else:
+        return tails * cpp_enrichment.prod_per_tail(x_feed, x_prod, x_tail)
+
+def tails(double x_feed, double x_prod, double x_tail, double feed=0, 
+          double product=0):
+    """tails(x_feed, x_prod, x_tail, feed=0, product=0)
+    Calculates the tails quantity in kg from either the feed or product.
+
+    Parameters
+    ----------
+    x_feed : float
+        Feed enrichment.
+    x_prod : float
+        Tails enrichment.
+    x_tail : float
+        Tails enrichment.
+    feed : float, optional
+        Quantity of feed in kg
+    product : float, optional
+        Quantity of product in kg
+
+    Returns
+    -------
+    tails : float
+        Tails quantity
+    """
+    if feed > 0:
+        return feed * cpp_enrichment.tail_per_feed(x_feed, x_prod, x_tail)
+    else:
+        return product * cpp_enrichment.tail_per_prod(x_feed, x_prod, x_tail)
+
+def value_func(double x):
+    """value_func(x)
+    Calculates the value or separation potential of an assay.
+
+    .. math::
+
+        V(x) = (2x - 1) \\log{\\frac{x}{x - 1}}
+
+    Parameters
+    ----------
+    x : float
+        assay enrichment.
+    
+    Returns
+    -------
+    val : float
+        As calculated above.
+    """
+    return cpp_enrichment.value_func(x)
+
+def swu(double x_feed, double x_prod, double x_tail, double feed=0, 
+        double product=0, double tails=0):
+    """swu(x_feed, x_prod, x_tail, feed=0, product=0, tails=0)
+    Calculates the SWU required to reach a given quantity of an enrichment
+    level. One of feed, product, or tails must be provided.
+
+    Parameters
+    ----------
+    x_feed : float
+        Feed enrichment.
+    x_prod : float
+        Product enrichment.
+    x_tail : float
+        Feed enrichment.
+    feed : float, optional
+        Quantity of feed in kg
+    product : float, optional
+        Quantity of product in kg
+    tails : float, optional
+        Quantity of tails in kg
+
+    Returns
+    -------
+    SWU : float
+        SWU required
+    """
+    if feed > 0:
+        return feed * cpp_enrichment.swu_per_feed(x_feed, x_prod, x_tail)
+    elif product > 0:
+        return product * cpp_enrichment.swu_per_prod(x_feed, x_prod, x_tail)
+    else:
+        return tails * cpp_enrichment.swu_per_tail(x_feed, x_prod, x_tail)
+        
 def prod_per_feed(double x_feed, double x_prod, double x_tail):
     """prod_per_feed(x_feed, x_prod, x_tail)
     Calculates the product over feed enrichment ratio.

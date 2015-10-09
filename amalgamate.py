@@ -5,9 +5,10 @@ This makes the C++ portion of pyne more portable to other projects.
 
 Originally inspired by JsonCpp: http://svn.code.sf.net/p/jsoncpp/code/trunk/jsoncpp/amalgamate.py
 """
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import os
 import sys
+import io
 from argparse import ArgumentParser
 
 CODE_EXTS = {'.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx'}
@@ -19,30 +20,34 @@ HEADER_EXTS |= {e.upper() for e in HEADER_EXTS}
 
 DEFAULT_FILES = [
     'license.txt',
-    'cpp/utils.h',
-    'cpp/utils.cpp',
-    'cpp/extra_types.h',
-    'cpp/h5wrap.h',
-    'cpp/state_map.cpp',
-    'cpp/nucname.h',
-    'cpp/nucname.cpp',
-    'cpp/rxname.h',
-    'cpp/rxname.cpp',
-    'cpp/data.h',
-    'cpp/data.cpp',
-    #'cpp/dagmc_bridge.cpp',
-    #'cpp/dagmc_bridge.h',
-    'cpp/json-forwards.h',
-    'cpp/json.h',
-    'cpp/jsoncpp.cpp',
-    'cpp/material.h',
-    'cpp/material.cpp',
-    'cpp/enrichment_cascade.h',
-    'cpp/enrichment_cascade.cpp',
-    'cpp/enrichment.h',
-    'cpp/enrichment.cpp',
-    'cpp/enrichment_symbolic.h',
-    'cpp/enrichment_symbolic20.cpp',
+    'src/utils.h',
+    'src/utils.cpp',
+    'src/extra_types.h',
+    'src/h5wrap.h',
+    'src/state_map.cpp',
+    'src/nucname.h',
+    'src/nucname.cpp',
+    'src/rxname.h',
+    'src/rxname.cpp',
+    'src/data.h',
+    'src/data.cpp',
+    #'src/dagmc_bridge.cpp',
+    #'src/dagmc_bridge.h',
+    'src/json-forwards.h',
+    'src/json.h',
+    'src/jsoncpp.cpp',
+    'src/jsoncustomwriter.h',
+    'src/jsoncustomwriter.cpp',
+    'src/material.h',
+    'src/material.cpp',
+    'src/enrichment_cascade.h',
+    'src/enrichment_cascade.cpp',
+    'src/enrichment.h',
+    'src/enrichment.cpp',
+    'src/enrichment_symbolic.h',
+    'src/enrichment_symbolic20.cpp',
+    'src/_decay.h',
+    'src/_decay.cpp',
     ]
 
 class AmalgamatedFile(object):
@@ -81,18 +86,21 @@ class AmalgamatedFile(object):
 
     def write(self):
         self.prepend_files()
-        txt = ''.join(self._blocks)
+        if sys.version > '3':
+            txt = ''.join(self._blocks)
+        else:
+            txt = ''.join([block.decode('utf-8') for block in self._blocks])
         d = os.path.dirname(self.path)
         if len(d) > 0 and not os.path.isdir(d):
             os.makedirs(d)
-        with open(self.path, 'wb') as f:
-            f.write(txt)
+        with io.open(self.path, 'wb') as f:
+            f.write(txt.encode('utf-8'))
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument('-s', dest='source_path', action='store', 
+    parser.add_argument('-s', dest='source_path', action='store',
                         default='pyne.cpp', help='Output *.cpp source path.')
-    parser.add_argument('-i', dest='header_path', action='store', 
+    parser.add_argument('-i', dest='header_path', action='store',
                         default='pyne.h', help='Output header path.')
     parser.add_argument('-f', dest='files', nargs='+', help='Files to amalgamate.',
                         default=DEFAULT_FILES)
@@ -116,7 +124,7 @@ def main():
     # source file
     src = AmalgamatedFile(ns.source_path)
     src.append_line('// PyNE amalgated source http://pyne.io/')
-    src.append_line('#include "{0}"'.format(os.path.relpath(ns.header_path, 
+    src.append_line('#include "{0}"'.format(os.path.relpath(ns.header_path,
                                             os.path.dirname(ns.source_path))))
     src.append_line('')
     for f in ns.files:
@@ -128,6 +136,6 @@ def main():
     # write both
     hdr.write()
     src.write()
- 
+
 if __name__ == '__main__':
     main()
