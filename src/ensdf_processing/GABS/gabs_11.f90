@@ -149,7 +149,7 @@
       DATA S,SD,SS,SB,SBD,SDR,DGARR/3*0.0,3*0.0,3*0.0,9*0.0,9*0.0,9*0.0,3*'  '/                                                           
       DATA DBRR,SBTOT,SBDTOT,SDRTOT/3*0.0,3*0.0,3*0.0,3*0.0/            
 !                     
-      Open (UNIT=DefOut,FORM='FORMATTED',CARRIAGECONTROL='FORTRAN')
+      Open (UNIT=DefOut,FORM='FORMATTED')!,CARRIAGECONTROL='FORTRAN')
 
       Write (DefOut,'(a)') '  ===========  '//Trim(Version)//'  ==========='     
 !.....Get command line arguments
@@ -563,8 +563,8 @@
         iDBX='  '                                                         
         CALL CNVU2S(SNOR1,U,iBX,8,iDBX,2)                                 
         If (iBX(1:8) == ' ') Then                                                    
-          Write (RptLun,'(a,f)') ' <E> Could not convert BR=',SNOR1
-          Write (DefOut,'(a,f)') ' <E> Could not convert BR=',SNOR1
+          Write (RptLun,'(a26,f5.5)') ' <E> Could not convert BR=',SNOR1
+          Write (DefOut,'(a26,f5.5)') ' <E> Could not convert BR=',SNOR1
           Stop  
         End If                                                            
         L=IM                                                              
@@ -662,15 +662,15 @@
         yyabs= ryabs * YABSG                                              
         CALL CNVU2S(YABSG,yyabs,iiBX,8,iiDBX,2)                           
         If (iiBX(1:8) == ' ') Then                                                    
-          Write (RptLun,'(a,f)') ' <E> Could not convert RI=',YABSG
-          Write (DefOut,'(a,f)') ' <E> Could not convert RI=',YABSG
+          Write (RptLun,'(a26,f5.5)') ' <E> Could not convert RI=',YABSG
+          Write (DefOut,'(a,f5.5)') ' <E> Could not convert RI=',YABSG
           Stop  
         End If 
         Call LBSUP(iiBX)                                                           
         CALL CNVU2S(YABSG,DABSG,iBX,8,iDBX,2)                             
         If (iBX(1:8) == ' ') Then                                                    
-          Write (RptLun,'(a,f)') ' <E> Could not convert RI=',YABSG
-          Write (DefOut,'(a,f)') ' <E> Could not convert RI=',YABSG
+          Write (RptLun,'(a26,f5.5)') ' <E> Could not convert RI=',YABSG
+          Write (DefOut,'(a26,f5.5)') ' <E> Could not convert RI=',YABSG
           Stop  
         End If
         Call LBSUP(iBX)
@@ -680,7 +680,7 @@
             Write (RptLun,'(a)') '        E='//Str2(1:13)//' %IG='//Trim(iBX)//' '//iDBX//' per 100 dis. Compare with '//Trim(iiBX)//' '//iiDBX                                              
             If (ANSW /= 'Y') Exit LoopG                                          
             Write (NewLun,'(a)') NUCID//STA//Trim(iBX)//' '//iDBX//STB 
-   	      Else
+            Else
             Write (RptLun,'(a)') '        E='//Str2(1:13)//' %IG='//Trim(iiBX)//' '//iiDBX//' per 100 dis.'
             If (ANSW /= 'Y') Exit LoopG                                         
             Write (NewLun,'(a)') NUCID//STA//Trim(iiBX)//' '//iDBX//STB 
