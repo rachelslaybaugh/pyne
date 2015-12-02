@@ -12565,7 +12565,7 @@ c     2     'LISTED X, g AND g+- RADIATIONS'//BLANKS,LISPHO             06 06070
          WRITE(UNIT=MIRDRP,FMT=1)                                       06 06080
      2     'LISTED X, $2 AND $2$+ RADIATIONS'//BLANKS,LISPHO            06 06090
 c1        FORMAT(A44,P1E8.2)                                            06 06100
-1        FORMAT(A<ALNGTH>,1PE8.2)                                       06 06110
+1        FORMAT(A47,1PE8.2)                                             06 06110
       ENDIF                                                             06 06120
       IF(OMIPHO .GT. 0)THEN                                             06 06130
          CALL CHKCON(.FALSE.)                                           06 06140
