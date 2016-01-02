@@ -19,53 +19,42 @@ IF(BUILD_SPATIAL_SOLVER)
 enable_language(Fortran)
 
 # Augment the Fortran implicit link libraries
-#message(STATUS
-#  "CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES = ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES}")
-#if (APPLE)
-#  message(STATUS
-#    "Before fix: CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES = ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
-#  set(LIBGCC_S)
+message(STATUS
+  "CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES = ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES}")
+if (APPLE)
+  message(STATUS
+    "Before fix: CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES = ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
+  set(LIBGCC_S)
 # The previous method found the gcc_s library by version,
     # find_library(LIBGCC_S_PATH gcc_s.${gcc_s_ver}
 # but this always found the library regardless of version, and then
 # the name as set was different from what was found.  This new way
 # ensures that the name is consistent with what was found.
-#  set(LIBGCC_S_PATH)
-#  foreach (gcc_s_ver 3 2 1)
-#    find_library(LIBGCC_S_PATH gcc_s.${gcc_s_ver}
-#      PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES}
-#      NODEFAULTPATH
-#    )
-#    if (LIBGCC_S_PATH)
-#      break()
-#    endif ()
-#  endforeach ()
-#  message(STATUS "LIBGCC_S_PATH = ${LIBGCC_S_PATH}.")
-#  if (LIBGCC_S_PATH)
-#    get_filename_component(LIBGCC_S ${LIBGCC_S_PATH} NAME)
+  set(LIBGCC_S_PATH)
+  foreach (gcc_s_ver 3 2 1)
+    find_library(LIBGCC_S_PATH gcc_s.${gcc_s_ver}
+      PATHS ${CMAKE_Fortran_IMPLICIT_LINK_DIRECTORIES}
+      NODEFAULTPATH
+    )
+    if (LIBGCC_S_PATH)
+      break()
+    endif ()
+  endforeach ()
+  message(STATUS "LIBGCC_S_PATH = ${LIBGCC_S_PATH}.")
+  if (LIBGCC_S_PATH)
+    get_filename_component(LIBGCC_S ${LIBGCC_S_PATH} NAME)
 # Pull off leading lib and trailing .dylib.
-#    string(REGEX REPLACE "^lib" "" LIBGCC_S ${LIBGCC_S})
-#    string(REGEX REPLACE "\\.dylib$" "" LIBGCC_S ${LIBGCC_S})
-#  endif ()
-#  message(STATUS "LIBGCC_S = ${LIBGCC_S}.")
-#  if (LIBGCC_S)
-#    set(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES} ${LIBGCC_S})
-#  endif ()
-#endif ()
-#message(STATUS
-#  "CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES = ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
+    string(REGEX REPLACE "^lib" "" LIBGCC_S ${LIBGCC_S})
+    string(REGEX REPLACE "\\.dylib$" "" LIBGCC_S ${LIBGCC_S})
+  endif ()
+  message(STATUS "LIBGCC_S = ${LIBGCC_S}.")
+  if (LIBGCC_S)
+    set(CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES} ${LIBGCC_S})
+  endif ()
+endif ()
+message(STATUS
+  "CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES = ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}")
 ENDIF(BUILD_SPATIAL_SOLVER)
-
-# FFLAGS depend on the compiler
-get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
-
-if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-  # gfortran
-  set (CMAKE_Fortran_FLAGS_RELEASE "-c")
-  set (CMAKE_Fortran_FLAGS_DEBUG   "-c")
-#elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
-endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
-
 
 # Make the scripts available in the 'cmake' directory available for the
 # 'include()' command, 'find_package()' command.
@@ -117,7 +106,11 @@ message("-- MOAB Found: ${MOAB_FOUND}")
 if(${MOAB_FOUND})
     include_directories(${MOAB_INCLUDE_DIR})
     get_filename_component(MOAB_LIBRARY_DIRS ${MOAB_LIBRARY} PATH)
-    link_directories(${MOAB_LIBRARY_DIRS})
+    if(APPLE)
+      link_directories(${MOAB_LIBRARY_DIRS}/lib)
+    else(APPLE)
+      link_directories(${MOAB_LIBRARY_DIRS})
+    endif(APPLE)
 endif(${MOAB_FOUND})
 
 # Include the CMake script UseCython.cmake.  This defines add_cython_module().
@@ -164,6 +157,9 @@ message("-- RPATH: ${CMAKE_INSTALL_RPATH}")
 # find numpy and include the numpy headers
 find_package(Numpy REQUIRED)
 include_directories("${NUMPY_INCLUDE_DIR}")
+
+#compiler warnings
+# add_definitions ("-Wpedantic")
 
 # Add JsonCpp Flag
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DJSON_IS_AMALGAMATION")
